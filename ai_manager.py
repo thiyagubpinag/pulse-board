@@ -28,18 +28,18 @@ class AIManager:
         try:
             # Build conversation history
             messages = [{"role": "system", "content": SystemContextGenerator.generate_context(
-                sprint=self.data_store.sprint_status,
+                sprints=self.data_store.sprints,
                 daily_updates=self.data_store.daily_updates,
                 analysis_results=
                 WorkloadAnalyzer.analyze(self.data_store.workload_data)+
                 GoalAnalyzer.analyze(self.data_store.goal_data) +
                 WellbeingAnalyzer.analyze(self.data_store.daily_updates) +
-                SprintStatusAnalyzer.analyze(self.data_store.sprint_status),
+                SprintStatusAnalyzer.analyze(self.data_store.sprints),
                 correlation=CorrelationEngine.correlate(
                     WorkloadAnalyzer.analyze(self.data_store.workload_data)+
                     GoalAnalyzer.analyze(self.data_store.goal_data) +
                     WellbeingAnalyzer.analyze(self.data_store.daily_updates) +
-                    SprintStatusAnalyzer.analyze(self.data_store.sprint_status)
+                    SprintStatusAnalyzer.analyze(self.data_store.sprints)
                 ),
                 workload_data=self.data_store.workload_data
             )}]

@@ -5,7 +5,7 @@ from data_models import SprintStatus, DailyUpdate, AnalysisResult, WorkloadData
 class SystemContextGenerator:
     @staticmethod
     def generate_context(
-        sprint: SprintStatus,
+        sprints: List[SprintStatus],
         daily_updates: List[DailyUpdate],
         analysis_results: List[AnalysisResult],
         correlation: dict,
@@ -13,15 +13,35 @@ class SystemContextGenerator:
     ) -> str:
         today = datetime.today()
 
+        if not sprints:
+            return "No sprint data available."
+
+        current = sprints[-1]
+        previous = sprints[-2] if len(sprints) > 1 else None
+
         # === Sprint Flags & Recommendations ===
         sprint_flags = [res.flags for res in analysis_results if res.agent_type == "sprint"]
         sprint_recommendations = [res.recommendations for res in analysis_results if res.agent_type == "sprint"]
         sprint_flags_flat = [f for sub in sprint_flags for f in sub]
         sprint_recs_flat = [r for sub in sprint_recommendations for r in sub]
 
+        # === SPRINT TREND ANALYSIS ===
+        if previous:
+            velocity_diff = current.velocity - previous.velocity
+            completion_diff = current.completion - previous.completion
+            bug_diff = current.critical_bugs - previous.critical_bugs
+
+            trend_lines = [
+                f"- Velocity changed: {previous.velocity} → {current.velocity} ({'+' if velocity_diff >= 0 else ''}{velocity_diff})",
+                f"- Completion changed: {previous.completion}% → {current.completion}% ({'+' if completion_diff >= 0 else ''}{completion_diff}%)",
+                f"- Critical bugs changed: {previous.critical_bugs} → {current.critical_bugs} ({'+' if bug_diff >= 0 else ''}{bug_diff})"
+            ]
+        else:
+            trend_lines = ["- No previous sprint available for comparison."]
+
         # === User Story Details ===
         user_story_details = []
-        for us in sprint.user_stories:
+        for us in current.user_stories:
             assignee = us.assignee or "Unassigned"
             status = us.status
             try:
@@ -71,11 +91,14 @@ class SystemContextGenerator:
         # === Final Context Format ===
         context = f"""You are AskManager, an AI assistant for sprint and team health management.
 
-SPRINT INFO: "{sprint.sprint_name}" ({sprint.start_date} → {sprint.end_date})
-- Progress: {sprint.completion}% complete (target: {sprint.target}%)
-- Velocity: {sprint.velocity} SP / {sprint.planned_velocity} SP
-- Critical bugs: {sprint.critical_bugs}
-- Unassigned stories: {sprint.unassigned_stories}
+SPRINT INFO: "{current.sprint_name}" ({current.start_date} → {current.end_date})
+- Progress: {current.completion}% complete (target: {current.target}%)
+- Velocity: {current.velocity} SP / {current.planned_velocity} SP
+- Critical bugs: {current.critical_bugs}
+- Unassigned stories: {current.unassigned_stories}
+
+SPRINT TREND ANALYSIS:
+{chr(10).join(trend_lines)}
 
 SPRINT HEALTH FINDINGS:
 {chr(10).join(f"- {flag}" for flag in sprint_flags_flat) if sprint_flags_flat else "- No major sprint-level risks detected"}

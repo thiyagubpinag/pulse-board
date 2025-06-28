@@ -4,79 +4,82 @@ from datetime import datetime, timedelta
 
 class SprintStatusAnalyzer:
     @staticmethod
-    def analyze(sprint: SprintStatus) -> List[AnalysisResult]:
-        flags = []
-        recommendations = []
-        risk = "low"
+    def analyze(sprints: List[SprintStatus]) -> List[AnalysisResult]:
+        results = []
 
-        # Completion vs. target check
-        if sprint.completion < sprint.target * 0.6:
-            flags.append(f"Low progress: {sprint.completion}% vs target {sprint.target}%")
-            recommendations.append("Investigate delays and reallocate resources")
-            risk = "medium"
+        for i, sprint in enumerate(sprints):
+            flags = []
+            recommendations = []
+            risk = "low"
 
-        # Critical bugs check
-        if sprint.critical_bugs >= 3:
-            flags.append(f"{sprint.critical_bugs} critical bugs unresolved")
-            recommendations.append("Prioritize fixing critical bugs")
-            risk = "high"
-
-        # Velocity health check
-        if sprint.velocity < sprint.planned_velocity * 0.5:
-            flags.append(f"Velocity is low: {sprint.velocity} / {sprint.planned_velocity}")
-            recommendations.append("Review capacity and scope creep")
-            if risk != "high":
+            # Basic checks
+            if sprint.completion < sprint.target * 0.6:
+                flags.append(f"[{sprint.sprint_name}] Low progress: {sprint.completion}% vs target {sprint.target}%")
+                recommendations.append("Investigate delays and reallocate resources")
                 risk = "medium"
 
-        # User Story Analysis
-        unassigned = [us for us in sprint.user_stories if not us.assignee]
-        stuck_stories = []
-        overloaded_members = {}
+            if sprint.critical_bugs >= 3:
+                flags.append(f"[{sprint.sprint_name}] {sprint.critical_bugs} critical bugs unresolved")
+                recommendations.append("Prioritize fixing critical bugs")
+                risk = "high"
 
-        for us in sprint.user_stories:
-            # Detect stuck stories
-            if us.status == "in progress":
-                try:
-                    start_date = datetime.strptime(us.start_date, "%Y-%m-%d")
-                    if start_date < datetime.today() - timedelta(days=5):
-                        stuck_stories.append(us)
-                except Exception:
-                    flags.append(f"Invalid or missing start date in story {us.id}")
-                    recommendations.append(f"Check start date of {us.id}")
+            if sprint.velocity < sprint.planned_velocity * 0.5:
+                flags.append(f"[{sprint.sprint_name}] Low velocity: {sprint.velocity} / {sprint.planned_velocity}")
+                recommendations.append("Review capacity and scope creep")
+                if risk != "high":
                     risk = "medium"
 
-            # Count number of stories per member
-            if us.assignee:
-                overloaded_members[us.assignee] = overloaded_members.get(us.assignee, 0) + 1
+            # User Story Analysis
+            unassigned = [us for us in sprint.user_stories if not us.assignee]
+            stuck_stories = []
+            overloaded_members = {}
 
-        # Flag unassigned stories
-        if unassigned:
-            flags.append(f"{len(unassigned)} user stories are unassigned")
-            recommendations.append("Assign all unclaimed stories to team members")
-            if risk != "high":
-                risk = "medium"
+            for us in sprint.user_stories:
+                if us.status == "in progress":
+                    try:
+                        start_date = datetime.strptime(us.start_date, "%Y-%m-%d")
+                        if start_date < datetime.today() - timedelta(days=5):
+                            stuck_stories.append(us)
+                    except Exception:
+                        flags.append(f"[{sprint.sprint_name}] Invalid or missing start date in story {us.id}")
+                        recommendations.append(f"Check start date of {us.id}")
+                        risk = "medium"
 
-        # Flag stuck stories
-        if stuck_stories:
-            stuck_titles = ', '.join([us.id for us in stuck_stories])
-            flags.append(f"Stories stuck in progress: {stuck_titles}")
-            recommendations.append("Follow up on long-running tasks")
-            risk = "high"
+                if us.assignee:
+                    overloaded_members[us.assignee] = overloaded_members.get(us.assignee, 0) + 1
 
-        # Flag members with more than 3 stories assigned
-        overloaded = [member for member, count in overloaded_members.items() if count > 3]
-        if overloaded:
-            flags.append(f"Members with high story load: {', '.join(overloaded)}")
-            recommendations.append("Balance story assignments across team")
-            if risk != "high":
-                risk = "medium"
+            if unassigned:
+                flags.append(f"[{sprint.sprint_name}] {len(unassigned)} stories unassigned")
+                recommendations.append("Assign all unclaimed stories")
+                if risk != "high":
+                    risk = "medium"
 
-        return [
-            AnalysisResult(
+            if stuck_stories:
+                stuck_ids = ', '.join(us.id for us in stuck_stories)
+                flags.append(f"[{sprint.sprint_name}] Stuck stories: {stuck_ids}")
+                recommendations.append("Follow up on long-running tasks")
+                risk = "high"
+
+            overloaded = [member for member, count in overloaded_members.items() if count > 3]
+            if overloaded:
+                flags.append(f"[{sprint.sprint_name}] Overloaded members: {', '.join(overloaded)}")
+                recommendations.append("Balance workload across team")
+                if risk != "high":
+                    risk = "medium"
+
+            # Compare with previous sprint if available
+            if i > 0:
+                prev = sprints[i - 1]
+                if sprint.velocity < prev.velocity:
+                    flags.append(f"[{sprint.sprint_name}] Velocity dropped vs {prev.sprint_name}")
+                    recommendations.append("Investigate root cause of velocity drop")
+
+            results.append(AnalysisResult(
                 agent_type="sprint",
                 member_id="team",
                 risk=risk,
                 flags=flags,
                 recommendations=recommendations
-            )
-        ]
+            ))
+
+        return results
