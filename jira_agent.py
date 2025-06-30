@@ -7,42 +7,9 @@ from datetime import datetime
 import sys
 from urllib.parse import quote
 
+from data_models import Sprint, SprintStatus, UserStory
+
 load_dotenv()
-
-# ==== Data Classes ====
-@dataclass
-class UserStory:
-    id: str
-    title: str
-    assignee: str
-    start_date: str
-    status: str                  # e.g., "in progress", "done", "unassigned"
-    story_points: Optional[int] = None
-    tags: Optional[List[str]] = None
-
-@dataclass
-class SprintStatus:
-    sprint_name: str
-    start_date: str
-    end_date: str
-    completion: int              # e.g., 40%
-    target: int                  # e.g., 60%
-    critical_bugs: int
-    unassigned_stories: int
-    velocity: int                # Completed story points
-    planned_velocity: int
-    user_stories: List[UserStory]
-
-@dataclass
-class Sprint:
-    id: int
-    name: str
-    state: str
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    complete_date: Optional[str] = None
-    board_id: int = None
-    goal: Optional[str] = None
 
 # ==== Jira Auth & Config ====
 JIRA_BASE_URL = os.getenv("JIRA_BASE_URL")

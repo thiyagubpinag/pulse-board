@@ -61,4 +61,16 @@ class SprintStatus:
     velocity: int                # Completed story points
     planned_velocity: int
     user_stories: List[UserStory]
+
+
+@dataclass
+class Sprint:
+    id: int
+    name: str
+    state: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    complete_date: Optional[str] = None
+    board_id: int = None
+    goal: Optional[str] = None   
 # ==== Sample Data ====
