@@ -30,6 +30,7 @@ class DataStore:
             GoalData("charlie", 8, 7, 0.875, 24, 0.85)
         ]
 
+        # self.sprints = fetch_all_sprint_statuses()
         
         self.sprints = [
              # Sprint 40 - before last

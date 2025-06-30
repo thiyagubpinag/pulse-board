@@ -39,7 +39,7 @@ def create_interface():
         .header { 
             text-align: center; 
             margin-bottom: 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #87CEEB 0%, #00BFFF 100%); /* Sky blue gradient */
             color: white;
             padding: 2rem;
             border-radius: 15px;
@@ -104,7 +104,6 @@ def create_interface():
         with gr.Column(elem_classes=["header"]):
             gr.HTML("""
             <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-                <div style="font-size: 3rem; margin-right: 1rem;">🚀</div>
                 <div>
                     <h1 style="margin: 0; font-size: 2.5rem; font-weight: bold;">PulseBoard AskManager</h1>
                     <p style="margin: 0.5rem 0 0 0; font-size: 1.2rem; opacity: 0.9;">Your Intelligent Sprint Management Assistant</p>
