@@ -8,3 +8,4 @@ uvicorn
 groq
 pydantic
 openai
+gradio
